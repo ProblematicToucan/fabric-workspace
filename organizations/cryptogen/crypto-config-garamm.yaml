@@ -1,0 +1,10 @@
+PeerOrgs:
+  - Name: Garamm
+    Domain: garamm.dev
+    EnableNodeOUs: true
+    Template:
+      Count: 1
+      SANS:
+        - localhost
+    Users:
+      Count: 1
