@@ -15,3 +15,4 @@ system-genesis-block/*
 *.tar.gz
 log.txt
 .envrc
+channel-artifacts/*
