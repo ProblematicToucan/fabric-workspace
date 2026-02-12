@@ -72,7 +72,6 @@ services:
       - ./organizations/peerOrganizations/garamm.dev/peers/peer0.garamm.dev:/etc/hyperledger/fabric
       - peer0.garamm.dev:/var/hyperledger/production
       - ./peercfg:/etc/hyperledger/peercfg
-      - ./channel-artifacts:/etc/hyperledger/channel-artifacts
       - /run/user/1000/docker.sock:/host/var/run/docker.sock
     working_dir: /root
     command: peer node start
