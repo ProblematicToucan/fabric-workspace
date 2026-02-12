@@ -1,14 +1,30 @@
 #!/usr/bin/env bash
-# Generate MSP crypto for orderer and peer orgs using cryptogen.
-# Run from fabric-workspace root. Requires cryptogen in PATH (e.g. fabric/build/bin).
+# Generate crypto material for 1 orderer org + 1 peer org using cryptogen
 
-set -e
-ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-cd "$ROOT"
+WORKSPACE_HOME=${WORKSPACE_HOME:-${PWD}}
+. ${WORKSPACE_HOME}/scripts/utils.sh
 
-echo "Generating crypto with cryptogen..."
-cryptogen generate --config="${ROOT}/organizations/cryptogen/crypto-config.yaml" --output="${ROOT}/organizations"
+if ! which cryptogen > /dev/null 2>&1; then
+  fatalln "cryptogen not found. Add fabric-samples/bin to PATH."
+fi
 
-echo "Crypto written to:"
-echo "  - organizations/ordererOrganizations/example.com"
-echo "  - organizations/peerOrganizations/garamm.dev"
+if [ -d "${WORKSPACE_HOME}/organizations/peerOrganizations" ]; then
+  infoln "Removing existing crypto..."
+  rm -Rf "${WORKSPACE_HOME}/organizations/peerOrganizations" "${WORKSPACE_HOME}/organizations/ordererOrganizations"
+fi
+
+infoln "Creating Org1 identities (peer)"
+set -x
+cryptogen generate --config="${WORKSPACE_HOME}/organizations/cryptogen/crypto-config-org1.yaml" --output="${WORKSPACE_HOME}/organizations"
+res=$?
+{ set +x; } 2>/dev/null
+[ $res -ne 0 ] && fatalln "Failed to generate Org1 certificates"
+
+infoln "Creating Orderer org identities"
+set -x
+cryptogen generate --config="${WORKSPACE_HOME}/organizations/cryptogen/crypto-config-orderer.yaml" --output="${WORKSPACE_HOME}/organizations"
+res=$?
+{ set +x; } 2>/dev/null
+[ $res -ne 0 ] && fatalln "Failed to generate Orderer certificates"
+
+successln "Crypto material generated under organizations/"

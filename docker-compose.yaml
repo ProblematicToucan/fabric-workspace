@@ -1,3 +1,14 @@
+# Minimal Fabric: 1 orderer + 1 peer (Org1) — for learning
+# Run from fabric-workspace root after generating crypto and channel block.
+
+volumes:
+  orderer.example.com:
+  peer0.org1.example.com:
+
+networks:
+  test:
+    name: fabric_workspace
+
 services:
   orderer.example.com:
     container_name: orderer.example.com
@@ -25,6 +36,8 @@ services:
       - ORDERER_ADMIN_TLS_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
       - ORDERER_ADMIN_TLS_CLIENTROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
       - ORDERER_ADMIN_LISTENADDRESS=0.0.0.0:7053
+      - ORDERER_OPERATIONS_LISTENADDRESS=orderer.example.com:9443
+      - ORDERER_METRICS_PROVIDER=prometheus
     working_dir: /root
     command: orderer
     volumes:
@@ -34,59 +47,44 @@ services:
     ports:
       - 7050:7050
       - 7053:7053
+      - 9443:9443
     networks:
-      - fabric-workspace
+      - test
 
-  peer0.garamm.dev:
+  peer0.org1.example.com:
+    container_name: peer0.org1.example.com
     image: hyperledger/fabric-peer:latest
-    container_name: peer0.garamm.dev
     labels:
       service: hyperledger-fabric
     environment:
       - FABRIC_CFG_PATH=/etc/hyperledger/peercfg
       - FABRIC_LOGGING_SPEC=INFO
-      #- FABRIC_LOGGING_SPEC=DEBUG
       - CORE_PEER_TLS_ENABLED=true
       - CORE_PEER_PROFILE_ENABLED=false
       - CORE_PEER_TLS_CERT_FILE=/etc/hyperledger/fabric/tls/server.crt
       - CORE_PEER_TLS_KEY_FILE=/etc/hyperledger/fabric/tls/server.key
       - CORE_PEER_TLS_ROOTCERT_FILE=/etc/hyperledger/fabric/tls/ca.crt
-      # Peer specific variables
-      - CORE_PEER_ID=peer0.garamm.dev
-      - CORE_PEER_ADDRESS=peer0.garamm.dev:7051
+      - CORE_PEER_ID=peer0.org1.example.com
+      - CORE_PEER_ADDRESS=peer0.org1.example.com:7051
       - CORE_PEER_LISTENADDRESS=0.0.0.0:7051
-      - CORE_PEER_CHAINCODEADDRESS=peer0.garamm.dev:7052
+      - CORE_PEER_CHAINCODEADDRESS=peer0.org1.example.com:7052
       - CORE_PEER_CHAINCODELISTENADDRESS=0.0.0.0:7052
-      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.garamm.dev:7051
-      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.garamm.dev:7051
-      - CORE_PEER_LOCALMSPID=GarammMSP
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.org1.example.com:7051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.org1.example.com:7051
+      - CORE_PEER_LOCALMSPID=Org1MSP
       - CORE_PEER_MSPCONFIGPATH=/etc/hyperledger/fabric/msp
-      - CORE_OPERATIONS_LISTENADDRESS=peer0.garamm.dev:9444
+      - CORE_OPERATIONS_LISTENADDRESS=peer0.org1.example.com:9444
       - CORE_METRICS_PROVIDER=prometheus
-      - CHAINCODE_AS_A_SERVICE_BUILDER_CONFIG={"peername":"peer0garammdev"}
+      - CHAINCODE_AS_A_SERVICE_BUILDER_CONFIG={"peername":"peer0org1"}
       - CORE_CHAINCODE_EXECUTETIMEOUT=300s
-      # Generic peer variables
-      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
-      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=fabric-workspace
     volumes:
-      - ./organizations/peerOrganizations/garamm.dev/peers/peer0.garamm.dev:/etc/hyperledger/fabric
-      - peer0.garamm.dev:/var/hyperledger/production
+      - ./organizations/peerOrganizations/org1.example.com/peers/peer0.org1.example.com:/etc/hyperledger/fabric
       - ./peercfg:/etc/hyperledger/peercfg
-      - /run/user/1000/docker.sock:/host/var/run/docker.sock
+      - peer0.org1.example.com:/var/hyperledger/production
     working_dir: /root
     command: peer node start
     ports:
       - 7051:7051
       - 9444:9444
     networks:
-      - fabric-workspace
-
-networks:
-  fabric-workspace:
-    name: fabric-workspace
-
-volumes:
-  orderer.example.com:
-    driver: local
-  peer0.garamm.dev:
-    driver: local
+      - test

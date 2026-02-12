@@ -1,3 +1,6 @@
+# Minimal configtx: 1 orderer org + 1 peer org (learning / dev only)
+# Paths are relative to configtx/ (e.g. ../organizations/...)
+
 Organizations:
   - &OrdererOrg
     Name: OrdererOrg
@@ -15,26 +18,25 @@ Organizations:
         Rule: "OR('OrdererMSP.admin')"
     OrdererEndpoints:
       - orderer.example.com:7050
-  - &Garamm
-    Name: GarammMSP
-    ID: GarammMSP
-    MSPDir: ../organizations/peerOrganizations/garamm.dev/msp
+
+  - &Org1
+    Name: Org1MSP
+    ID: Org1MSP
+    MSPDir: ../organizations/peerOrganizations/org1.example.com/msp
     Policies:
       Readers:
         Type: Signature
-        Rule: "OR('GarammMSP.admin', 'GarammMSP.peer', 'GarammMSP.client')"
+        Rule: "OR('Org1MSP.admin', 'Org1MSP.peer', 'Org1MSP.client')"
       Writers:
         Type: Signature
-        Rule: "OR('GarammMSP.admin', 'GarammMSP.client')"
+        Rule: "OR('Org1MSP.admin', 'Org1MSP.client')"
       Admins:
         Type: Signature
-        Rule: "OR('GarammMSP.admin')"
+        Rule: "OR('Org1MSP.admin')"
       Endorsement:
         Type: Signature
-        Rule: "OR('GarammMSP.peer')"
-################################################################################
-#   SECTION: Capabilities
-################################################################################
+        Rule: "OR('Org1MSP.peer')"
+
 Capabilities:
   Channel: &ChannelCapabilities
     V2_0: true
@@ -42,9 +44,7 @@ Capabilities:
     V2_0: true
   Application: &ApplicationCapabilities
     V2_5: true
-################################################################################
-#   SECTION: Application
-################################################################################
+
 Application: &ApplicationDefaults
   Organizations:
   Policies:
@@ -65,9 +65,7 @@ Application: &ApplicationDefaults
       Rule: "MAJORITY Endorsement"
   Capabilities:
     <<: *ApplicationCapabilities
-################################################################################
-#   SECTION: Orderer
-################################################################################
+
 Orderer: &OrdererDefaults
   Addresses:
     - orderer.example.com:7050
@@ -90,9 +88,7 @@ Orderer: &OrdererDefaults
     BlockValidation:
       Type: ImplicitMeta
       Rule: "ANY Writers"
-################################################################################
-#   SECTION: Channel
-################################################################################
+
 Channel: &ChannelDefaults
   Policies:
     Readers:
@@ -106,11 +102,9 @@ Channel: &ChannelDefaults
       Rule: "MAJORITY Admins"
   Capabilities:
     <<: *ChannelCapabilities
-################################################################################
-#   Profiles - used by configtxgen to create channel genesis block
-################################################################################
+
 Profiles:
-  MyChannel:
+  ChannelUsingRaft:
     <<: *ChannelDefaults
     Orderer:
       <<: *OrdererDefaults
@@ -127,5 +121,5 @@ Profiles:
     Application:
       <<: *ApplicationDefaults
       Organizations:
-        - *Garamm
+        - *Org1
       Capabilities: *ApplicationCapabilities

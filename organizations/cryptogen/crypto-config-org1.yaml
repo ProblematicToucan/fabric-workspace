@@ -1,6 +1,7 @@
+# Single peer org (learning / dev only)
 PeerOrgs:
-  - Name: Garamm
-    Domain: garamm.dev
+  - Name: Org1
+    Domain: org1.example.com
     EnableNodeOUs: true
     Template:
       Count: 1
