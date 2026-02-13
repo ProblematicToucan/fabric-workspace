@@ -1,11 +1,26 @@
-# Minimal configtx: 1 orderer org + 1 peer org (learning / dev only)
-# Paths are relative to configtx/ (e.g. ../organizations/...)
+# =============================================================================
+# Minimal configtx — 1 orderer org + 1 peer org (learning / dev only)
+# =============================================================================
+# Used by configtxgen to generate the channel genesis block. All paths below
+# are relative to the directory containing this file (configtx/), e.g.:
+#   MSPDir: ../organizations/ordererOrganizations/example.com/msp
+# =============================================================================
 
+---
+################################################################################
+# Organizations
+# Identity definitions for the network. Each org has an MSP (Membership Service
+# Provider) directory holding certs; these are referenced in channel profiles.
+################################################################################
 Organizations:
+  # ---------------------------------------------------------------------------
+  # OrdererOrg — runs the ordering service (consensus)
+  # ---------------------------------------------------------------------------
   - &OrdererOrg
     Name: OrdererOrg
     ID: OrdererMSP
     MSPDir: ../organizations/ordererOrganizations/example.com/msp
+    # Who can read/write/admin orderer config. Used for channel config updates.
     Policies:
       Readers:
         Type: Signature
@@ -16,9 +31,13 @@ Organizations:
       Admins:
         Type: Signature
         Rule: "OR('OrdererMSP.admin')"
+    # Address clients/peers use to reach the orderer (must match container name/host).
     OrdererEndpoints:
       - orderer.example.com:7050
 
+  # ---------------------------------------------------------------------------
+  # Org1 — peer organization (holds ledger, runs chaincode)
+  # ---------------------------------------------------------------------------
   - &Org1
     Name: Org1MSP
     ID: Org1MSP
@@ -33,10 +52,16 @@ Organizations:
       Admins:
         Type: Signature
         Rule: "OR('Org1MSP.admin')"
+      # Who may endorse transactions (peers only in this rule).
       Endorsement:
         Type: Signature
         Rule: "OR('Org1MSP.peer')"
 
+################################################################################
+# Capabilities
+# Feature flags so all nodes must support the same Fabric version behavior.
+# V2_0 / V2_5 must match the binaries (e.g. fabric 2.5.x).
+################################################################################
 Capabilities:
   Channel: &ChannelCapabilities
     V2_0: true
@@ -45,6 +70,11 @@ Capabilities:
   Application: &ApplicationCapabilities
     V2_5: true
 
+################################################################################
+# Application (defaults for application channels)
+# Default policies and capabilities for the “Application” section of a channel.
+# Organizations list is empty here; each profile adds the orgs that join the channel.
+################################################################################
 Application: &ApplicationDefaults
   Organizations:
   Policies:
@@ -66,6 +96,11 @@ Application: &ApplicationDefaults
   Capabilities:
     <<: *ApplicationCapabilities
 
+################################################################################
+# Orderer (defaults for the ordering service)
+# Batch size/timeout and policies. Addresses are the orderer endpoints for
+# broadcast/deliver. EtcdRaft consenters are defined in the profile below.
+################################################################################
 Orderer: &OrdererDefaults
   Addresses:
     - orderer.example.com:7050
@@ -89,6 +124,10 @@ Orderer: &OrdererDefaults
       Type: ImplicitMeta
       Rule: "ANY Writers"
 
+################################################################################
+# Channel (top-level defaults)
+# Who can read/write channel config and who are channel admins.
+################################################################################
 Channel: &ChannelDefaults
   Policies:
     Readers:
@@ -103,13 +142,21 @@ Channel: &ChannelDefaults
   Capabilities:
     <<: *ChannelCapabilities
 
+################################################################################
+# Profiles
+# Named profiles are passed to configtxgen with -profile <name>. This workspace
+# uses ChannelUsingRaft to produce the application channel genesis block
+# (configtxgen -profile ChannelUsingRaft -outputBlock ... -channelID <channelName>).
+################################################################################
 Profiles:
+  # Application channel with a single Raft orderer and one peer org.
   ChannelUsingRaft:
     <<: *ChannelDefaults
     Orderer:
       <<: *OrdererDefaults
       OrdererType: etcdraft
       EtcdRaft:
+        # Single consenter; TLS certs must exist at the paths below (from cryptogen).
         Consenters:
           - Host: orderer.example.com
             Port: 7050
