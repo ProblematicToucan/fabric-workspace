@@ -1,14 +1,28 @@
 #!/usr/bin/env bash
 #
-# Minimal Fabric network: 1 orderer + 1 peer (Org1)
-# For learning. Uses fabric-samples/bin for tools if available.
+# =============================================================================
+# network.sh — Minimal Fabric network (1 orderer + 1 peer, Org1)
+# =============================================================================
+#
+# Entry point for bringing up and tearing down the learning network. Assumes
+# Fabric binaries (configtxgen, cryptogen, peer, osnadmin) are on PATH;
+# prepends ../fabric-samples/bin when run from this directory.
 #
 # Usage:
-#   ./network.sh up              — generate crypto (if needed), start containers
-#   ./network.sh up createChannel — up + create channel and join peer
-#   ./network.sh createChannel    — create channel and join peer (network must be up)
-#   ./network.sh down            — stop and remove containers/volumes/crypto
+#   ./network.sh up                Generate crypto (if needed), start containers
+#   ./network.sh up createChannel  Same as up, then create channel and join peer
+#   ./network.sh createChannel     Create channel and join peer (network must be up)
+#   ./network.sh down              Stop containers, remove volumes/crypto/artifacts
+#   ./network.sh restart           Down (keep crypto) then up
 #
+# Options (e.g. for createChannel):
+#   -c <name>   Channel name (default: mychannel)
+#   -d <sec>    Delay between retries (default: 3)
+#   -r <n>      Max retries (default: 5)
+#   -verbose    Verbose output
+#   -h          Show usage
+#
+# =============================================================================
 
 set -e
 ROOTDIR=$(cd "$(dirname "$0")" && pwd)
@@ -22,6 +36,9 @@ trap "popd > /dev/null" EXIT
 
 . scripts/utils.sh
 
+# -----------------------------------------------------------------------------
+# Container CLI: docker vs podman (docker compose vs podman compose)
+# -----------------------------------------------------------------------------
 : ${CONTAINER_CLI:="docker"}
 if command -v ${CONTAINER_CLI}-compose > /dev/null 2>&1; then
   : ${CONTAINER_CLI_COMPOSE:="${CONTAINER_CLI}-compose"}
@@ -32,6 +49,10 @@ fi
 : ${CLI_DELAY:="3"}
 : ${MAX_RETRY:="5"}
 
+# -----------------------------------------------------------------------------
+# createOrgs — Generate crypto material if not already present
+# Output: organizations/peerOrganizations, organizations/ordererOrganizations
+# -----------------------------------------------------------------------------
 function createOrgs() {
   if [ ! -d "organizations/peerOrganizations" ]; then
     scripts/generate_crypto.sh
@@ -40,6 +61,9 @@ function createOrgs() {
   fi
 }
 
+# -----------------------------------------------------------------------------
+# networkUp — Ensure crypto exists, start orderer + peer via docker-compose
+# -----------------------------------------------------------------------------
 function networkUp() {
   createOrgs
   infoln "Starting containers (orderer + peer)..."
@@ -49,6 +73,10 @@ function networkUp() {
   infoln "Network is up. Orderer: 7050/7053, Peer: 7051"
 }
 
+# -----------------------------------------------------------------------------
+# createChannel — Create channel and join peer (bring up network if needed)
+# Delegates to scripts/createChannel.sh for genesis block, orderer join, peer join
+# -----------------------------------------------------------------------------
 function createChannel() {
   if ! ${CONTAINER_CLI} info > /dev/null 2>&1; then
     fatalln "Docker is not running"
@@ -61,6 +89,10 @@ function createChannel() {
   scripts/createChannel.sh "$CHANNEL_NAME" "$CLI_DELAY" "$MAX_RETRY"
 }
 
+# -----------------------------------------------------------------------------
+# networkDown — Stop and remove containers/volumes; optionally remove crypto
+# Arg: "restart" = do not remove crypto/artifacts (used by restart mode)
+# -----------------------------------------------------------------------------
 function networkDown() {
   infoln "Stopping network..."
   ${CONTAINER_CLI_COMPOSE} down --volumes 2>/dev/null || true
@@ -74,12 +106,16 @@ function networkDown() {
   successln "Network down"
 }
 
-# Parse mode
+# -----------------------------------------------------------------------------
+# Parse command line: MODE and optional SUB (e.g. createChannel after up)
+# -----------------------------------------------------------------------------
 MODE="${1:-}"
 SUB="${2:-}"
 shift 2>/dev/null || true
 
-# Flags
+# -----------------------------------------------------------------------------
+# Parse flags (-c, -d, -r, -verbose, -h)
+# -----------------------------------------------------------------------------
 while [[ $# -ge 1 ]]; do
   case "$1" in
     -c) CHANNEL_NAME="$2"; shift 2 ;;
@@ -99,6 +135,9 @@ while [[ $# -ge 1 ]]; do
   esac
 done
 
+# -----------------------------------------------------------------------------
+# Dispatch to the requested mode
+# -----------------------------------------------------------------------------
 case "$MODE" in
   up)
     if [ "$SUB" = "createChannel" ]; then

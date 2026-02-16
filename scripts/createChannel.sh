@@ -1,6 +1,23 @@
 #!/usr/bin/env bash
-# Create channel: 1) genesis block, 2) orderer joins channel, 3) peer joins channel
-# Single org — no anchor peer update (optional for one peer).
+#
+# =============================================================================
+# createChannel.sh — Create channel and join peer (single org)
+# =============================================================================
+#
+# Runs the full flow:
+#   1. Generate channel genesis block (configtxgen -profile ChannelUsingRaft)
+#   2. Join orderer to channel (osnadmin channel join)
+#   3. Join peer to channel (peer channel join)
+#
+# No anchor peer update (optional when there is only one peer). Expects
+# network to be up and crypto under organizations/. Run from fabric-workspace
+# root (WORKSPACE_HOME set by network.sh).
+#
+# Usage: scripts/createChannel.sh [channel_name] [delay_sec] [max_retry]
+#   channel_name  Default: mychannel
+#   delay_sec      Delay between retries (default: 3)
+#   max_retry      Max join retries (default: 5)
+# =============================================================================
 
 . scripts/envVar.sh
 
@@ -19,6 +36,10 @@ infoln "Using ${CONTAINER_CLI} and ${CONTAINER_CLI_COMPOSE}"
 
 mkdir -p channel-artifacts
 
+# -----------------------------------------------------------------------------
+# createChannelGenesisBlock — configtxgen writes channel-artifacts/<channel>.block
+# Uses configtx/configtx.yaml profile ChannelUsingRaft
+# -----------------------------------------------------------------------------
 createChannelGenesisBlock() {
   setGlobals
   which configtxgen > /dev/null 2>&1 || fatalln "configtxgen not found. Add fabric-samples/bin to PATH."
@@ -32,6 +53,9 @@ createChannelGenesisBlock() {
   verifyResult $res "Failed to generate channel genesis block"
 }
 
+# -----------------------------------------------------------------------------
+# ordererJoinChannel — osnadmin channel join with retries (orderer may need time)
+# -----------------------------------------------------------------------------
 ordererJoinChannel() {
   local rc=1
   local COUNTER=1
@@ -46,6 +70,10 @@ ordererJoinChannel() {
   verifyResult $rc "Orderer failed to join channel after $MAX_RETRY attempts"
 }
 
+# -----------------------------------------------------------------------------
+# joinPeerToChannel — peer channel join with retries; FABRIC_CFG_PATH=peercfg
+# so peer CLI finds core.yaml (configtx has no core.yaml)
+# -----------------------------------------------------------------------------
 joinPeerToChannel() {
   setGlobals
   export FABRIC_CFG_PATH="${WORKSPACE_HOME}/peercfg"
@@ -66,14 +94,12 @@ joinPeerToChannel() {
   verifyResult $rc "Peer failed to join channel ${CHANNEL_NAME} after $MAX_RETRY attempts"
 }
 
-# Step 1: generate channel genesis block
+# --- Main flow ---
 infoln "Generating channel genesis block '${CHANNEL_NAME}.block'"
 FABRIC_CFG_PATH=${WORKSPACE_HOME}/configtx createChannelGenesisBlock
 
-# Step 2: orderer joins channel (channel participation API)
 ordererJoinChannel
 successln "Channel '${CHANNEL_NAME}' created on orderer"
 
-# Step 3: peer joins channel
 joinPeerToChannel
 successln "Peer joined channel '${CHANNEL_NAME}'"
