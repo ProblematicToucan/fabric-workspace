@@ -14,14 +14,14 @@
 #   2. add-org   — Update channel config to include Org3 (needs parent up + channel).
 #   3. up        — Start the Org3 peer container on the same Docker network.
 #   4. join      — Join that peer to the channel (needs block 0 + peer up).
-#   5. down      — Stop/remove only the Org3 peer (parent unchanged).
+#   5. down      — Stop Org3 peer and remove generated crypto/artifacts (parent unchanged).
 #
 # Usage:
 #   ./run.sh generate           Generate Org3 crypto only
 #   ./run.sh add-org [channel]  Add Org3 to channel (default: mychannel)
 #   ./run.sh up                 Start peer0.org3 (port 8051, network fabric_workspace)
 #   ./run.sh join [channel]     Join peer0.org3 to channel
-#   ./run.sh down               Stop peer0.org3 container
+#   ./run.sh down               Stop peer0.org3 and remove generated artifacts
 #
 # =============================================================================
 set -e
@@ -64,7 +64,11 @@ case "$MODE" in
   down)
     $CONTAINER_CLI_COMPOSE -f "${ROOTDIR}/docker-compose.yaml" down --volumes 2>/dev/null || true
     $CONTAINER_CLI rm -f peer0.org3.example.com 2>/dev/null || true
-    echo "Org3 peer stopped"
+    echo "Removing generated artifacts (crypto, channel-artifacts, log)..."
+    rm -rf "${ROOTDIR}/organizations/peerOrganizations"
+    rm -rf "${ROOTDIR}/channel-artifacts"
+    rm -f "${ROOTDIR}/log.txt"
+    echo "Org3 peer stopped; generated artifacts removed"
     ;;
   *)
     echo "Usage: $0 generate | add-org [channel] | up | join [channel] | down"
