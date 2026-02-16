@@ -30,8 +30,8 @@ mkdir -p "${THIRD_ROOT}/channel-artifacts"
 
 # -----------------------------------------------------------------------------
 # Step 1 — Org definition for the channel
-# configtxgen -printOrg writes the MSP + policies as JSON. The channel config
-# stores each org under channel_group.groups.Application.groups.<MSPID>.
+# configtxgen -printOrg writes the MSP + policies as JSON. It reads from
+# FABRIC_CFG_PATH and expects a file named configtx.yaml there.
 # -----------------------------------------------------------------------------
 if [ ! -f "${THIRD_ROOT}/organizations/peerOrganizations/org3.example.com/org3.json" ]; then
   infoln "Generating Org3 organization definition..."
@@ -60,11 +60,12 @@ verifyResult $? "Failed to extract config JSON (need jq)"
 
 # -----------------------------------------------------------------------------
 # Step 3 — Merge Org3 into Application groups
-# The channel config has channel_group.groups.Application.groups; we add
-# Org3MSP with the content of org3.json (MSP dir refs, policies).
+# We only add Org3MSP under Application.groups; other Application fields stay.
+# (fabric-samples addOrg3 uses jq the same way: configUpdate.sh + updateChannelConfig.sh.)
+# With -s, inputs are [config, org3]; bind both so .[1] is valid when modifying.
 # -----------------------------------------------------------------------------
 infoln "Adding Org3 to channel config..."
-jq -s '.[0] * {"channel_group":{"groups":{"Application":{"groups": {"Org3MSP":.[1]}}}}}' \
+jq -s '.[0] as $config | .[1] as $org3 | $config | .channel_group.groups.Application.groups.Org3MSP = $org3' \
   "${THIRD_ROOT}/channel-artifacts/config.json" \
   "${THIRD_ROOT}/organizations/peerOrganizations/org3.example.com/org3.json" \
   > "${THIRD_ROOT}/channel-artifacts/modified_config.json"

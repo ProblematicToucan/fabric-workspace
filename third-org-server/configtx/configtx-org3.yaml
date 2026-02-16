@@ -1,8 +1,10 @@
 # =============================================================================
-# Org3 MSP definition for configtxgen -printOrg (learning)
+# Org3 MSP definition — same content as configtx.yaml (learning)
 # =============================================================================
 #
-# LEARNING: configtxgen -printOrg Org3MSP reads this file and outputs a JSON
+# configtxgen requires the config file to be named configtx.yaml in FABRIC_CFG_PATH;
+# that file is configtx.yaml in this directory. This file is a copy with extra
+# comments. configtxgen -printOrg Org3MSP reads the config and outputs a JSON
 # fragment that gets embedded in the channel config under Application.groups.
 # The channel stores the org's MSP (root certs, etc.) and these policies.
 #
