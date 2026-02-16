@@ -1,0 +1,28 @@
+# =============================================================================
+# Cryptogen config for Org3 (learning)
+# =============================================================================
+#
+# LEARNING: cryptogen generate --config=this_file --output=organizations
+# creates a peer org with the following structure.
+#
+#   Name / Domain — org name and DNS domain (e.g. peer0.org3.example.com).
+#   EnableNodeOUs — use OU (Organizational Unit) in certs so Fabric can distinguish
+#                   admin, peer, client roles from the cert alone.
+#   Template — defines peers:
+#     Count: 1  — one peer (peer0.org3.example.com).
+#     SANS — Subject Alternative Names so TLS works for "localhost" and container name.
+#   Users — Count: 1 creates User1; Admin is always created for peer orgs.
+#
+# Output: organizations/peerOrganizations/org3.example.com/ (msp, peers/, users/, tlsca/).
+#
+# =============================================================================
+PeerOrgs:
+  - Name: Org3
+    Domain: org3.example.com
+    EnableNodeOUs: true
+    Template:
+      Count: 1
+      SANS:
+        - localhost
+    Users:
+      Count: 1
