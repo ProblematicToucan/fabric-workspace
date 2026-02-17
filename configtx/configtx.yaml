@@ -98,12 +98,11 @@ Application: &ApplicationDefaults
 
 ################################################################################
 # Orderer (defaults for the ordering service)
-# Batch size/timeout and policies. Addresses are the orderer endpoints for
-# broadcast/deliver. EtcdRaft consenters are defined in the profile below.
+# Batch size/timeout and policies. Orderer endpoints come from OrdererOrg
+# OrdererEndpoints (org-specific); do not set Addresses here to avoid the
+# "global endpoints will be ignored" warning when both are present.
 ################################################################################
 Orderer: &OrdererDefaults
-  Addresses:
-    - orderer.example.com:7050
   BatchTimeout: 2s
   BatchSize:
     MaxMessageCount: 10
