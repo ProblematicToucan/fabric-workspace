@@ -1,18 +1,34 @@
-/channel-artifacts/*.tx
-/channel-artifacts/*.block
-/ledgers
-/ledgers-backup
-/channel-artifacts/*.json
-/channel-artifacts/*.pb
-/org3-artifacts/crypto-config/*
-organizations/fabric-ca/ordererOrg/*
-organizations/fabric-ca/org1/*
-organizations/fabric-ca/org2/*
-addOrg3/fabric-ca/org3/*
-organizations/ordererOrganizations/*
-organizations/peerOrganizations/*
-system-genesis-block/*
-*.tar.gz
-log.txt
-.envrc
-channel-artifacts/*
+# Emacs backup files
+*~
+*#
+.#*
+# Vim file artifacts
+.*.sw*
+.DS_Store
+.project
+# omit Go vendor directories
+vendor/
+.vscode
+.gradle
+.idea
+# Dependency directories
+node_modules/
+package-lock.json
+# Ignore Gradle build output directory
+build
+# Ignore Maven build output directory
+target
+
+# Eclipse
+.classpath
+.settings
+
+# installed Fabric binaries etc.
+/bin/
+builders/
+config/
+external-chaincode/
+install-fabric.sh
+
+# override the ignore of all config/ folders
+!full-stack-asset-transfer-guide/infrastructure/sample-network/config

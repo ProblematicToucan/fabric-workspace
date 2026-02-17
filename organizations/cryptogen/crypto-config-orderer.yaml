@@ -1,9 +1,0 @@
-# Orderer org: single orderer node (learning / dev only)
-OrdererOrgs:
-  - Name: Orderer
-    Domain: example.com
-    EnableNodeOUs: true
-    Specs:
-      - Hostname: orderer
-        SANS:
-          - localhost
