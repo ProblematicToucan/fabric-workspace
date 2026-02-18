@@ -10,7 +10,7 @@
     "scripts": {
         "lint": "eslint src",
         "pretest": "npm run lint",
-        "test": "",
+        "test": "vitest run",
         "start": "set -x && fabric-chaincode-node start",
         "build": "tsc",
         "build:watch": "tsc -w",
@@ -31,10 +31,11 @@
         "sort-keys-recursive": "^2.1.0"
     },
     "devDependencies": {
-        "@types/node": "^18.19.33",
         "@eslint/js": "^9.3.0",
         "@tsconfig/node18": "^18.2.4",
+        "@types/node": "^18.19.33",
         "eslint": "^8.57.0",
+        "vitest": "^2.1.0",
         "typescript": "~5.4.5",
         "typescript-eslint": "^7.11.0"
     }
