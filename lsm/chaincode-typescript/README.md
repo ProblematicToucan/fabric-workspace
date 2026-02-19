@@ -40,7 +40,7 @@ Regulated + Compliant + Transparency
 - Issue fund/token
 - Transfer fund/token
 
-### Org2MSP - donner users
+### Org2MSP - donor users
 
 - Donate
 - GetAllFunds
