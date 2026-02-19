@@ -14,11 +14,11 @@ import { Bank } from '../object/bank';
 export class UserContract extends Contract {
     @Transaction()
     public async RegisterNGO(ctx: Context, ngo: NGO): Promise<string> {
+        requireMSP(ctx, ['Org3MSP'], 'ngoAdmin'); // check if the user is a ngo admin
+
         ngo.creatorMSP = ctx.clientIdentity.getMSPID();
         ngo.creator = ctx.clientIdentity.getID();
         ngo.createdAt = getTimestamp(ctx);
-
-        requireMSP(ctx, ['Org3MSP'], 'ngoAdmin'); // check if the user is a ngo admin
         const ngoKey = `ngo:${ngo.id}`;
         if (await assetExists(ctx, ngoKey)) {
             throw new Error(`NGO ${ngo.id} already exists`);
@@ -84,11 +84,11 @@ export class UserContract extends Contract {
 
     @Transaction()
     public async RegisterBank(ctx: Context, bank: Bank): Promise<string> {
+        requireMSP(ctx, ['Org2MSP'], 'govUser'); // check if the user is a gov user
+
         bank.creatorMSP = ctx.clientIdentity.getMSPID();
         bank.creator = ctx.clientIdentity.getID();
         bank.createdAt = getTimestamp(ctx);
-
-        requireMSP(ctx, ['Org2MSP'], 'govUser'); // check if the user is a gov user
         const bankKey = `bank:${bank.id}`;
         if (await assetExists(ctx, bankKey)) {
             throw new Error(`Bank ${bank.id} already exists`);

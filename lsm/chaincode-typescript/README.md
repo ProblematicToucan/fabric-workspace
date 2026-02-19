@@ -5,7 +5,7 @@ Regulated + Compliant + Transparency
 ## ORGs
 
 - Org1 = PlatformMSP -> Add new Org
-- Org2 = GovMSP -> Register GovAdmin cert -> onboard Bank & goverment user
+- Org2 = GovMSP -> Register GovAdmin cert -> onboard Bank & government user
 - Org3 = NGOMSP -> Register NGOAdmin -> Register NGO's
 
 ## User Types - user roles
@@ -24,7 +24,7 @@ Regulated + Compliant + Transparency
 
 - add new org to the network ex: Org3, Org4, ...
 
-### Org2 - GovMSP - goverment user
+### Org2 - GovMSP - government user
 
 - RegisterDonor
 - GetDonor
