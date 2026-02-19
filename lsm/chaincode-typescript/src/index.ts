@@ -3,5 +3,6 @@
  */
 
 import { type Contract } from 'fabric-contract-api';
+import { UserContract } from './contracts/userContract';
 
-export const contracts: typeof Contract[] = [];
+export const contracts: typeof Contract[] = [UserContract];
