@@ -108,6 +108,34 @@ export class UserContract extends Contract {
         return JSON.parse(bankJSON.toString());
     }
 
+    @Transaction(false)
+    @Returns('Bank[]')
+    public async GetAllBanks(ctx: Context): Promise<Bank[]> {
+        requireMSP(ctx, ['Org2MSP'], 'govUser'); // check if the user is a gov user
+        const startKey = 'bank:';
+        const endKey = 'bank;';
+        const bankIterator = await ctx.stub.getStateByRange(startKey, endKey);
+        const banks: Bank[] = [];
+        try {
+            let result = await bankIterator.next();
+            while (!result.done) {
+                const strValue = Buffer.from(result.value.value.toString()).toString('utf8');
+                let record: Bank | string;
+                try {
+                    record = JSON.parse(strValue) as Bank;
+                } catch (err) {
+                    console.log(err);
+                    record = strValue as unknown as Bank;
+                }
+                banks.push(record as Bank);
+                result = await bankIterator.next();
+            }
+            return banks;
+        } finally {
+            await bankIterator.close();
+        }
+    }
+
     @Transaction()
     public async UpdateBank(ctx: Context, id: string, update: Partial<Bank>): Promise<string> {
         requireMSP(ctx, ['Org2MSP'], 'govUser'); // check if the user is a gov user

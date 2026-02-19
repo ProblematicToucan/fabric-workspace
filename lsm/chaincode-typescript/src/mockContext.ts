@@ -2,12 +2,19 @@
  * SPDX-License-Identifier: Apache-2.0
  *
  * Minimal mock stub and context for unit testing chaincode without a Fabric peer.
- * Implements only the stub methods used by AssetTransferContract.
+ * Implements only the stub methods used by the LSM contracts.
  */
 
 import type {Context} from 'fabric-contract-api';
 
 const store = new Map<string, Uint8Array>();
+
+export interface MockContextOptions {
+    /** MSP ID for clientIdentity.getMSPID() (e.g. 'Org2MSP' for gov user). */
+    mspId?: string;
+    /** Role attribute for clientIdentity.getAttributeValue('role') (e.g. 'govUser'). */
+    role?: string;
+}
 
 function* rangeEntries(startKey: string, endKey: string): Generator<{key: string; value: Uint8Array}> {
     const keys = Array.from(store.keys()).sort();
@@ -46,9 +53,11 @@ const mockStub = {
         const it = asyncRange(startKey, endKey);
         return {
             next: () => it.next(),
+            close: async () => {},
             [Symbol.asyncIterator]: () => it,
         };
     },
+    getTxTimestamp: () => ({ seconds: 1000, nanos: 0 }),
 };
 
 const mockLogging = {
@@ -61,14 +70,25 @@ const mockLogging = {
     }),
 };
 
+function createClientIdentity(opts: MockContextOptions = {}): Context['clientIdentity'] {
+    const mspId = opts.mspId ?? 'Org1MSP';
+    const role = opts.role ?? '';
+    return {
+        getMSPID: () => mspId,
+        getID: () => 'x509::mock::subject',
+        getAttributeValue: (attrName: string) => (attrName === 'role' ? role : null),
+    } as Context['clientIdentity'];
+}
+
 /**
  * Creates a mock Context for unit testing. Uses an in-memory store (shared across calls by default).
  * Call resetMockStubStore() between tests if you need a clean state.
+ * @param opts - Optional MSP ID and role for requireMSP (e.g. { mspId: 'Org2MSP', role: 'govUser' }).
  */
-export function newMockContext(): Context {
+export function newMockContext(opts: MockContextOptions = {}): Context {
     return {
         stub: mockStub as unknown as Context['stub'],
-        clientIdentity: {} as Context['clientIdentity'],
+        clientIdentity: createClientIdentity(opts),
         logging: mockLogging as unknown as Context['logging'],
     };
 }
