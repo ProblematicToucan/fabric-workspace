@@ -4,7 +4,7 @@
 
 import { Context, Contract, Info, Returns, Transaction } from 'fabric-contract-api';
 import { NGO } from '../object/ngo';
-import { assetExists, getTimestamp, requireMSP } from '../utils';
+import { assetExists, getAllRecordsByKeyRange, getTimestamp, requireMSP } from '../utils';
 import stringify from 'json-stringify-deterministic';
 import sortKeysRecursive from 'sort-keys-recursive';
 import { Donor } from '../object/donor';
@@ -33,16 +33,16 @@ export class UserContract extends Contract {
     public async GetNGO(ctx: Context, id: string): Promise<NGO> {
         const ngoKey = `ngo:${id}`;
         const ngoJSON = await ctx.stub.getState(ngoKey);
-        if (!ngoJSON || ngoJSON.length === 0) {
+        if (ngoJSON.length === 0) {
             throw new Error(`NGO ${id} does not exist`);
         }
-        return JSON.parse(ngoJSON.toString());
+        return JSON.parse(ngoJSON.toString()) as NGO;
     }
 
     @Transaction()
     public async UpdateNGO(ctx: Context, id: string, update: Partial<NGO>): Promise<string> {
         requireMSP(ctx, ['Org3MSP'], 'ngoAdmin'); // check if the user is a ngo admin
-        const ngo = await this.GetNGO(ctx, id) as NGO;
+        const ngo = await this.GetNGO(ctx, id);
         const updatedNGO = { ...ngo, ...update, updatedAt: getTimestamp(ctx) } as NGO;
         await ctx.stub.putState(`ngo:${id}`, Buffer.from(stringify(sortKeysRecursive(updatedNGO))));
         return JSON.stringify(updatedNGO);
@@ -68,15 +68,15 @@ export class UserContract extends Contract {
     public async GetDonor(ctx: Context, id: string): Promise<Donor> {
         const donorKey = `donor:${id}`;
         const donorJSON = await ctx.stub.getState(donorKey);
-        if (!donorJSON || donorJSON.length === 0) {
+        if (donorJSON.length === 0) {
             throw new Error(`Donor ${id} does not exist`);
         }
-        return JSON.parse(donorJSON.toString());
+        return JSON.parse(donorJSON.toString()) as Donor;
     }
 
     @Transaction()
     public async UpdateDonor(ctx: Context, id: string, update: Partial<Donor>): Promise<string> {
-        const donor = await this.GetDonor(ctx, id) as Donor;
+        const donor = await this.GetDonor(ctx, id);
         const updatedDonor = { ...donor, ...update, updatedAt: getTimestamp(ctx) } as Donor;
         await ctx.stub.putState(`donor:${id}`, Buffer.from(stringify(sortKeysRecursive(updatedDonor))));
         return JSON.stringify(updatedDonor);
@@ -102,10 +102,10 @@ export class UserContract extends Contract {
     public async GetBank(ctx: Context, id: string): Promise<Bank> {
         const bankKey = `bank:${id}`;
         const bankJSON = await ctx.stub.getState(bankKey);
-        if (!bankJSON || bankJSON.length === 0) {
+        if (bankJSON.length === 0) {
             throw new Error(`Bank ${id} does not exist`);
         }
-        return JSON.parse(bankJSON.toString());
+        return JSON.parse(bankJSON.toString()) as Bank;
     }
 
     @Transaction(false)
@@ -114,32 +114,13 @@ export class UserContract extends Contract {
         requireMSP(ctx, ['Org2MSP'], 'govUser'); // check if the user is a gov user
         const startKey = 'bank:';
         const endKey = 'bank;';
-        const bankIterator = await ctx.stub.getStateByRange(startKey, endKey);
-        const banks: Bank[] = [];
-        try {
-            let result = await bankIterator.next();
-            while (!result.done) {
-                const strValue = Buffer.from(result.value.value.toString()).toString('utf8');
-                let record: Bank | string;
-                try {
-                    record = JSON.parse(strValue) as Bank;
-                } catch (err) {
-                    console.log(err);
-                    record = strValue as unknown as Bank;
-                }
-                banks.push(record as Bank);
-                result = await bankIterator.next();
-            }
-            return banks;
-        } finally {
-            await bankIterator.close();
-        }
+        return await getAllRecordsByKeyRange<Bank>(ctx, startKey, endKey);
     }
 
     @Transaction()
     public async UpdateBank(ctx: Context, id: string, update: Partial<Bank>): Promise<string> {
         requireMSP(ctx, ['Org2MSP'], 'govUser'); // check if the user is a gov user
-        const bank = await this.GetBank(ctx, id) as Bank;
+        const bank = await this.GetBank(ctx, id);
         const updatedBank = { ...bank, ...update, updatedAt: getTimestamp(ctx) } as Bank;
         await ctx.stub.putState(`bank:${id}`, Buffer.from(stringify(sortKeysRecursive(updatedBank))));
         return JSON.stringify(updatedBank);
